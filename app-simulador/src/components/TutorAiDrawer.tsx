@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Bot, Send, X, Lightbulb, ShieldAlert, BookOpen, Loader2 } from 'lucide-react';
 import { Question } from '@/types';
+import { generateTutorResponse } from '@/lib/tutorService';
 
 interface TutorAiDrawerProps {
   isOpen: boolean;
@@ -45,41 +46,29 @@ export default function TutorAiDrawer({
     setLoading(true);
 
     try {
-      const res = await fetch('/api/tutor', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          questionId: question.id,
-          enunciado: question.enunciado,
-          opciones: question.opciones,
-          claveOficial: question.clave_oficial,
-          explicacionOficial: question.explicacion,
-          userQuery: userText,
-          mode,
-        }),
+      // Direct client-side generation for zero-latency & GitHub Pages compatibility
+      const reply = generateTutorResponse({
+        questionId: question.id,
+        enunciado: question.enunciado,
+        opciones: question.opciones,
+        claveOficial: question.clave_oficial,
+        explicacionOficial: question.explicacion,
+        userQuery: userText,
+        mode,
       });
 
-      const data = await res.json();
-      if (data.success && data.tutorResponse) {
-        setMessages([...newMsgs, { role: 'assistant', content: data.tutorResponse }]);
-      } else {
-        setMessages([
-          ...newMsgs,
-          {
-            role: 'assistant',
-            content: 'No se pudo generar la orientación en este momento. Intenta nuevamente.',
-          },
-        ]);
-      }
+      setTimeout(() => {
+        setMessages([...newMsgs, { role: 'assistant', content: reply }]);
+        setLoading(false);
+      }, 350);
     } catch {
       setMessages([
         ...newMsgs,
         {
           role: 'assistant',
-          content: 'Error de conexión con el motor de IA. Verifica tu conexión a internet.',
+          content: 'No se pudo generar la orientación en este momento. Intenta nuevamente.',
         },
       ]);
-    } finally {
       setLoading(false);
     }
   };

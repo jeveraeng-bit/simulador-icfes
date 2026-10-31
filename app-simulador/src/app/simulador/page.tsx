@@ -11,6 +11,7 @@ import TutorAiDrawer from '@/components/TutorAiDrawer';
 import { Question, QuestionResponseLog, ExamType, ExamMode, ExamSessionLog } from '@/types';
 import { computeExamResults } from '@/lib/scoringEngine';
 import { getUserProfile, saveSessionLog } from '@/lib/storage';
+import { getFilteredQuestions } from '@/lib/questionsService';
 import { ChevronLeft, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 
 function SimuladorContent() {
@@ -42,41 +43,39 @@ function SimuladorContent() {
       ? 2400
       : 5400;
 
-  // Load questions from API
+  // Load questions from local service
   useEffect(() => {
-    async function fetchQuestions() {
-      setLoading(true);
-      try {
-        const limit = modeParam === 'DIAGNOSTICO_RAPIDO' ? '15' : modeParam === 'ENTRENAMIENTO_AREA' ? '20' : '40';
-        const url = `/api/questions?exam=${examTypeParam}&area=${areaParam}&limit=${limit}&mode=${modeParam}`;
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data.success && data.questions?.length > 0) {
-          setQuestions(data.questions);
+    setLoading(true);
+    try {
+      const limit = modeParam === 'DIAGNOSTICO_RAPIDO' ? 15 : modeParam === 'ENTRENAMIENTO_AREA' ? 20 : 40;
+      const loadedQuestions = getFilteredQuestions({
+        exam: examTypeParam,
+        area: areaParam,
+        limit,
+        mode: modeParam,
+      });
 
-          // Initialize responses map
-          const initialMap: Record<string, QuestionResponseLog> = {};
-          data.questions.forEach((q: Question) => {
-            initialMap[q.id] = {
-              questionId: q.id,
-              selectedOption: null,
-              isCorrect: false,
-              timeSpentSeconds: 0,
-              changeCount: 0,
-              isFlagged: false,
-              visitedTimestamp: Date.now(),
-            };
-          });
-          setResponses(initialMap);
-        }
-      } catch (err) {
-        console.error('Error fetching questions', err);
-      } finally {
-        setLoading(false);
-      }
+      setQuestions(loadedQuestions);
+
+      // Initialize responses map
+      const initialMap: Record<string, QuestionResponseLog> = {};
+      loadedQuestions.forEach((q: Question) => {
+        initialMap[q.id] = {
+          questionId: q.id,
+          selectedOption: null,
+          isCorrect: false,
+          timeSpentSeconds: 0,
+          changeCount: 0,
+          isFlagged: false,
+          visitedTimestamp: Date.now(),
+        };
+      });
+      setResponses(initialMap);
+    } catch (err) {
+      console.error('Error fetching questions', err);
+    } finally {
+      setLoading(false);
     }
-
-    fetchQuestions();
   }, [examTypeParam, modeParam, areaParam]);
 
   // Update item active time when navigating

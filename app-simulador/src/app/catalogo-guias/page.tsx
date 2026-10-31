@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import AdBanner from '@/components/AdBanner';
 import { ProcessedDocument } from '@/types';
+import { getFilteredCatalog } from '@/lib/catalogService';
 import {
   BookOpen,
   Search,
@@ -20,22 +21,15 @@ export default function CatalogoGuiasPage() {
   const [selectedDoc, setSelectedDoc] = useState<ProcessedDocument | null>(null);
 
   useEffect(() => {
-    async function loadCatalog() {
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/catalog?exam=${examFilter}&q=${encodeURIComponent(search)}`);
-        const data = await res.json();
-        if (data.success) {
-          setDocuments(data.documents);
-        }
-      } catch (err) {
-        console.error('Error cargando catalogo', err);
-      } finally {
-        setLoading(false);
-      }
+    setLoading(true);
+    try {
+      const docs = getFilteredCatalog({ exam: examFilter, query: search });
+      setDocuments(docs);
+    } catch (err) {
+      console.error('Error cargando catalogo', err);
+    } finally {
+      setLoading(false);
     }
-
-    loadCatalog();
   }, [examFilter, search]);
 
   return (

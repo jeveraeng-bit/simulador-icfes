@@ -23,17 +23,14 @@ import {
 } from 'lucide-react';
 
 export default function HomePage() {
-  const [profile, setProfile] = useState(getUserProfile());
   const [targetExam, setTargetExam] = useState<ExamType>('SABER_11');
 
   useEffect(() => {
     const p = getUserProfile();
-    setProfile(p);
     setTargetExam(p.targetExam);
 
     const onExamChange = () => {
       const updated = getUserProfile();
-      setProfile(updated);
       setTargetExam(updated.targetExam);
     };
 
